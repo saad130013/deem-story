@@ -4,6 +4,8 @@ import { PlayCircle, Lightbulb, Printer, Presentation, FileText, Edit3, Save, X,
 // @ts-ignore
 import PptxGenJS from 'pptxgenjs';
 // @ts-ignore
+import html2pdf from 'html2pdf.js';
+// @ts-ignore
 import { get, set } from 'idb-keyval';
 import { getStroke } from 'perfect-freehand';
 
@@ -285,9 +287,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
     const element = document.getElementById('lesson-content-to-print');
     const opt = { margin: [20, 20, 30, 20], filename: `${data.title.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
     try {
-      // @ts-ignore
-      if (window.html2pdf) { await window.html2pdf().set(opt).from(element).save(); } 
-      else { alert("خاصية تحميل PDF غير متوفرة حالياً. يرجى استخدام الطباعة كبديل."); window.print(); }
+      if (!element) throw new Error('Lesson content was not found');
+      await html2pdf().set(opt).from(element).save();
     } catch (e) { console.error("PDF Error", e); alert("حدث خطأ أثناء تحميل ملف PDF"); } 
     finally { setIsDownloadingPDF(false); }
   };

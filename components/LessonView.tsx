@@ -285,7 +285,37 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
   const handleDownloadPDF = async () => {
     setIsDownloadingPDF(true);
     const element = document.getElementById('lesson-content-to-print');
-    const opt = { margin: [20, 20, 30, 20], filename: `${data.title.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+    const opt = {
+      margin: [20, 20, 30, 20],
+      filename: `${data.title.replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        onclone: (clonedDocument: Document) => {
+          const style = clonedDocument.createElement('style');
+          style.textContent = `
+            #lesson-content-to-print,
+            #lesson-content-to-print *,
+            #lesson-content-to-print *::before,
+            #lesson-content-to-print *::after {
+              color: #111827 !important;
+              background-color: #ffffff !important;
+              border-color: #d1d5db !important;
+              box-shadow: none !important;
+              text-shadow: none !important;
+            }
+            #lesson-content-to-print h1,
+            #lesson-content-to-print h2,
+            #lesson-content-to-print h3 { color: #4c1d95 !important; }
+          `;
+          clonedDocument.head.appendChild(style);
+        },
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    };
     try {
       if (!element) throw new Error('Lesson content was not found');
       const previewWindow = window.open('', '_blank');

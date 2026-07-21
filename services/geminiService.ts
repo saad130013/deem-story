@@ -11,7 +11,7 @@ const readSessionKey = (): string => {
 };
 
 export const isGeminiConfigured = (): boolean =>
-  Boolean(runtimeApiKey || readSessionKey() || process.env.API_KEY);
+  Boolean(runtimeApiKey || readSessionKey());
 
 export const configureGemini = (apiKey: string): void => {
   runtimeApiKey = apiKey.trim();
@@ -26,7 +26,7 @@ export const configureGemini = (apiKey: string): void => {
 };
 
 const getAI = (): GoogleGenAI => {
-  const apiKey = runtimeApiKey || readSessionKey() || process.env.API_KEY;
+  const apiKey = runtimeApiKey || readSessionKey();
 
   if (!apiKey) {
     throw new Error('Gemini is not configured. Add an API key from AI settings.');

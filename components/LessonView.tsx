@@ -288,7 +288,12 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
     const opt = { margin: [20, 20, 30, 20], filename: `${data.title.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
     try {
       if (!element) throw new Error('Lesson content was not found');
-      await html2pdf().set(opt).from(element).save();
+      const previewWindow = window.open('', '_blank');
+      if (!previewWindow) throw new Error('PDF preview popup was blocked');
+      previewWindow.document.title = data.title;
+      previewWindow.document.body.innerHTML = '<p style="font-family: sans-serif; text-align: center; padding: 2rem;">جاري إنشاء ملف PDF...</p>';
+      const pdfUrl = await html2pdf().set(opt).from(element).outputPdf('bloburl');
+      previewWindow.location.href = pdfUrl;
     } catch (e) { console.error("PDF Error", e); alert("حدث خطأ أثناء تحميل ملف PDF"); } 
     finally { setIsDownloadingPDF(false); }
   };
@@ -363,7 +368,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
             </button>
             <div className="w-px h-8 bg-gray-200 hidden md:block"></div>
             <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all"><Printer size={18} /><span>طباعة</span></button>
-            <button onClick={handleDownloadPDF} disabled={isDownloadingPDF} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPDF ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div> : <FileText size={18} />}<span>PDF</span></button>
+            <button onClick={handleDownloadPDF} disabled={isDownloadingPDF} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPDF ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div> : <FileText size={18} />}<span>فتح PDF</span></button>
             <button onClick={handleDownloadPPT} disabled={isDownloadingPPT} className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPPT ? <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div> : <Presentation size={18} />}<span>PowerPoint</span></button>
          </div>
       </div>

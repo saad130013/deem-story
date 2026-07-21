@@ -6,9 +6,10 @@ import { LessonRequest } from '../types';
 interface LessonFormProps {
   onSubmit: (data: LessonRequest) => void;
   isLoading: boolean;
+  aiEnabled: boolean;
 }
 
-export const LessonForm: React.FC<LessonFormProps> = ({ onSubmit, isLoading }) => {
+export const LessonForm: React.FC<LessonFormProps> = ({ onSubmit, isLoading, aiEnabled }) => {
   const [subject, setSubject] = useState<'general' | 'math' | 'reading'>('general');
   const [topic, setTopic] = useState('');
   const [ageGroup, setAgeGroup] = useState('6-8');
@@ -66,7 +67,9 @@ export const LessonForm: React.FC<LessonFormProps> = ({ onSubmit, isLoading }) =
             <Sparkles className="w-8 h-8 text-yellow-300" />
             <span>{language === 'ar' ? 'اصنع درسك الجديد' : 'Create New Lesson'}</span>
             </h2>
-            <p className="text-blue-100">{language === 'ar' ? 'اختر نوع الدرس وسيقوم الذكاء الاصطناعي بالباقي!' : 'Choose lesson type and let AI do the magic!'}</p>
+            <p className="text-blue-100">{aiEnabled
+              ? (language === 'ar' ? 'اختر نوع الدرس وسيقوم الذكاء الاصطناعي بالباقي!' : 'Choose lesson type and let AI do the magic!')
+              : (language === 'ar' ? 'أنشئ قالباً يدوياً ثم حرره واحفظه بدون ذكاء اصطناعي.' : 'Create and edit a manual lesson template without AI.')}</p>
         </div>
       </div>
 
@@ -281,7 +284,9 @@ export const LessonForm: React.FC<LessonFormProps> = ({ onSubmit, isLoading }) =
           ) : (
             <>
               <GraduationCap className="w-8 h-8" />
-              <span>{language === 'ar' ? 'ابدأ الدرس السحري' : 'Start Magic Lesson'}</span>
+              <span>{aiEnabled
+                ? (language === 'ar' ? 'ابدأ الدرس بالذكاء الاصطناعي' : 'Create with AI')
+                : (language === 'ar' ? 'إنشاء قالب درس يدوي' : 'Create Manual Lesson')}</span>
             </>
           )}
         </button>

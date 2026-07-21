@@ -4,6 +4,8 @@ import { PlayCircle, Lightbulb, Printer, Presentation, FileText, Edit3, Save, X,
 // @ts-ignore
 import PptxGenJS from 'pptxgenjs';
 // @ts-ignore
+import html2pdf from 'html2pdf.js';
+// @ts-ignore
 import { get, set } from 'idb-keyval';
 import { getStroke } from 'perfect-freehand';
 
@@ -283,11 +285,45 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
   const handleDownloadPDF = async () => {
     setIsDownloadingPDF(true);
     const element = document.getElementById('lesson-content-to-print');
-    const opt = { margin: [20, 20, 30, 20], filename: `${data.title.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+    const opt = {
+      margin: [20, 20, 30, 20],
+      filename: `${data.title.replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        onclone: (clonedDocument: Document) => {
+          const style = clonedDocument.createElement('style');
+          style.textContent = `
+            #lesson-content-to-print,
+            #lesson-content-to-print *,
+            #lesson-content-to-print *::before,
+            #lesson-content-to-print *::after {
+              color: #111827 !important;
+              background-color: #ffffff !important;
+              border-color: #d1d5db !important;
+              box-shadow: none !important;
+              text-shadow: none !important;
+            }
+            #lesson-content-to-print h1,
+            #lesson-content-to-print h2,
+            #lesson-content-to-print h3 { color: #4c1d95 !important; }
+          `;
+          clonedDocument.head.appendChild(style);
+        },
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    };
     try {
-      // @ts-ignore
-      if (window.html2pdf) { await window.html2pdf().set(opt).from(element).save(); } 
-      else { alert("خاصية تحميل PDF غير متوفرة حالياً. يرجى استخدام الطباعة كبديل."); window.print(); }
+      if (!element) throw new Error('Lesson content was not found');
+      const previewWindow = window.open('', '_blank');
+      if (!previewWindow) throw new Error('PDF preview popup was blocked');
+      previewWindow.document.title = data.title;
+      previewWindow.document.body.innerHTML = '<p style="font-family: sans-serif; text-align: center; padding: 2rem;">جاري إنشاء ملف PDF...</p>';
+      const pdfUrl = await html2pdf().set(opt).from(element).outputPdf('bloburl');
+      previewWindow.location.href = pdfUrl;
     } catch (e) { console.error("PDF Error", e); alert("حدث خطأ أثناء تحميل ملف PDF"); } 
     finally { setIsDownloadingPDF(false); }
   };
@@ -362,7 +398,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ data, image, onStartQuiz
             </button>
             <div className="w-px h-8 bg-gray-200 hidden md:block"></div>
             <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all"><Printer size={18} /><span>طباعة</span></button>
-            <button onClick={handleDownloadPDF} disabled={isDownloadingPDF} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPDF ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div> : <FileText size={18} />}<span>PDF</span></button>
+            <button onClick={handleDownloadPDF} disabled={isDownloadingPDF} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPDF ? <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div> : <FileText size={18} />}<span>فتح PDF</span></button>
             <button onClick={handleDownloadPPT} disabled={isDownloadingPPT} className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl font-bold transition-all disabled:opacity-50">{isDownloadingPPT ? <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div> : <Presentation size={18} />}<span>PowerPoint</span></button>
          </div>
       </div>

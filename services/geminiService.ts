@@ -2,7 +2,38 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { LessonData, QuizQuestion, LessonRequest } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const SESSION_KEY = 'deem_gemini_api_key';
+let runtimeApiKey = '';
+
+const readSessionKey = (): string => {
+  if (typeof window === 'undefined') return '';
+  return window.sessionStorage.getItem(SESSION_KEY) || '';
+};
+
+export const isGeminiConfigured = (): boolean =>
+  Boolean(runtimeApiKey || readSessionKey());
+
+export const configureGemini = (apiKey: string): void => {
+  runtimeApiKey = apiKey.trim();
+
+  if (typeof window === 'undefined') return;
+
+  if (runtimeApiKey) {
+    window.sessionStorage.setItem(SESSION_KEY, runtimeApiKey);
+  } else {
+    window.sessionStorage.removeItem(SESSION_KEY);
+  }
+};
+
+const getAI = (): GoogleGenAI => {
+  const apiKey = runtimeApiKey || readSessionKey();
+
+  if (!apiKey) {
+    throw new Error('Gemini is not configured. Add an API key from AI settings.');
+  }
+
+  return new GoogleGenAI({ apiKey });
+};
 
 const lessonSchema: Schema = {
   type: Type.OBJECT,
@@ -56,7 +87,7 @@ const generateImageForSection = async (description: string): Promise<string | un
     2. The image must be purely visual. 
     3. No speech bubbles.`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model,
       contents: { parts: [{ text: prompt }] }
     });
@@ -90,7 +121,7 @@ export const enhanceLessonLanguage = async (lesson: LessonData, language: 'ar' |
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -203,7 +234,7 @@ export const generateLesson = async (request: LessonRequest): Promise<LessonData
     parts.push({ text: "Please incorporate the content of the attached image into the lesson explanation if relevant." });
   }
 
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model,
     contents: { parts },
     config: {
@@ -253,7 +284,7 @@ export const generateQuiz = async (lessonContext: LessonData, language: 'ar' | '
     Lesson Content Summary: ${lessonContext.introduction} ${lessonContext.sections.map(s => s.content).join(' ')}
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model,
     contents: prompt,
     config: {
